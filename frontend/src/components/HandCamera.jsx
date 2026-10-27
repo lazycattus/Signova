@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FilesetResolver, HandLandmarker, DrawingUtils } from '@mediapipe/tasks-vision'
+import { flattenHands } from '../lib/landmarks'
 
 const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
 const MODEL_URL =
@@ -7,11 +8,11 @@ const MODEL_URL =
 
 /**
  * Shows the webcam, runs MediaPipe hand detection on every frame,
- * and draws the 21 landmark dots on top.
+ * and draws the 21 landmark dots on each hand (up to 2 hands).
  *
- * onLandmarks(landmarks) is called each frame a hand is seen.
- * `landmarks` is an array of 21 points: { x, y, z } (values 0..1).
- * This is what we will later flatten to 63 numbers and send to the classifier.
+ * onLandmarks(features, handCount) is called each frame at least one hand is seen.
+ * `features` is 126 numbers (left hand 63 + right hand 63, zeros if a hand is
+ * missing). This is what we send to the classifier later.
  */
 export default function HandCamera({ onLandmarks }) {
   const videoRef = useRef(null)
@@ -37,7 +38,7 @@ export default function HandCamera({ onLandmarks }) {
         handLandmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
           runningMode: 'VIDEO',
-          numHands: 1,
+          numHands: 2,
         })
         if (cancelled) {
           handLandmarker.close()
@@ -56,7 +57,7 @@ export default function HandCamera({ onLandmarks }) {
         const video = videoRef.current
         video.srcObject = stream
         await video.play()
-        setStatus('Show your hand to the camera')
+        setStatus('Show your hand(s) to the camera')
         loop()
       } catch (err) {
         console.error(err)
@@ -84,17 +85,18 @@ export default function HandCamera({ onLandmarks }) {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         if (result.landmarks.length > 0) {
-          const hand = result.landmarks[0]
           const drawing = new DrawingUtils(ctx)
-          drawing.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, {
-            color: '#22c55e',
-            lineWidth: 3,
-          })
-          drawing.drawLandmarks(hand, { color: '#ef4444', radius: 4 })
-          onLandmarksRef.current?.(hand)
-          setStatus('Hand detected')
+          for (const hand of result.landmarks) {
+            drawing.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, {
+              color: '#22c55e',
+              lineWidth: 3,
+            })
+            drawing.drawLandmarks(hand, { color: '#ef4444', radius: 4 })
+          }
+          onLandmarksRef.current?.(flattenHands(result), result.landmarks.length)
+          setStatus(result.landmarks.length === 2 ? 'Both hands detected' : 'One hand detected')
         } else {
-          setStatus('Show your hand to the camera')
+          setStatus('Show your hand(s) to the camera')
         }
       }
       rafId = requestAnimationFrame(loop)

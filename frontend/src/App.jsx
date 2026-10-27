@@ -4,7 +4,8 @@ import { speak } from './lib/speak'
 
 function App() {
   const [lang, setLang] = useState('en-US')
-  const [landmarkCount, setLandmarkCount] = useState(0)
+  const [handCount, setHandCount] = useState(0)
+  const [featureCount, setFeatureCount] = useState(0)
 
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 bg-slate-50 p-6">
@@ -13,10 +14,15 @@ function App() {
         <p className="text-slate-500">Real-time BIM sign language recognition</p>
       </header>
 
-      <HandCamera onLandmarks={(hand) => setLandmarkCount(hand.length)} />
+      <HandCamera
+        onLandmarks={(features, hands) => {
+          setFeatureCount(features.length)
+          setHandCount(hands)
+        }}
+      />
 
       <p className="text-sm text-slate-500">
-        Landmarks tracked: <strong>{landmarkCount}</strong> / 21
+        Hands: <strong>{handCount}</strong> · Numbers for classifier: <strong>{featureCount}</strong>
       </p>
 
       <div className="flex items-center gap-3">
