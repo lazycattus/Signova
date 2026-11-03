@@ -1,3 +1,6 @@
 venv/
 models/
 __pycache__/
+# raw videos stay on your laptop (only landmark numbers go to Git)
+videos/*
+!videos/.gitkeep
