@@ -26,26 +26,26 @@ src/
    ```
    git checkout main
    git pull
-   git checkout -b feat/page-history
+   git checkout -b feat/page-queue
    ```
-2. Create `src/pages/HistoryPage.jsx`:
+2. Create `src/pages/QueuePage.jsx`:
    ```jsx
-   export const title = 'History'   // text in the menu (optional)
+   export const title = 'Queue'     // text in the menu (optional)
    export const order = 40          // position in the menu, smaller = earlier (optional)
 
-   export default function HistoryPage() {
-     return <h1 className="text-2xl font-bold">History</h1>
+   export default function QueuePage() {
+     return <h1 className="text-2xl font-bold">Queue</h1>
    }
    ```
    - File name ends with `Page.jsx`, starts with a capital letter.
-   - The web address comes from the name: `HistoryPage` becomes `/history`, `SignGuidePage` becomes `/sign-guide`.
+   - The web address comes from the name: `QueuePage` becomes `/queue`, `SignGuidePage` becomes `/sign-guide`.
      (`HomePage` is `/`.) Set `export const path = '/custom'` only if you need a different one.
 3. Check it: `npm run dev`, then click your page in the top menu.
 4. Save, push, merge:
    ```
    git add .
-   git commit -m "Add history page"
-   git push -u origin feat/page-history
+   git commit -m "Add queue page"
+   git push -u origin feat/page-queue
    ```
    Then make the pull request on GitHub and merge.
 
@@ -53,8 +53,8 @@ src/
 
 - **Only edit your own page file.** Need a change in a shared part (`Layout.jsx`, `HandCamera.jsx`)?
   Tell your partner and do it in its own small branch.
-- Put page-only pieces in `src/components/` with a clear name (e.g. `HistoryList.jsx`), not inside someone else's page.
-- Menu order numbers (`order`): Home 0, Recognition 10, AAC 20, Sign guide 30, History 40. Pick a free number.
+- Put page-only pieces in `src/components/` with a clear name (e.g. `QueueTicket.jsx`), not inside someone else's page.
+- Menu order numbers (`order`): Home 0, Recognition 10, AAC 20, Sign guide 30. Pick a free number.
 - Do not change the 126-number layout in `src/lib/landmarks.js` without also changing `ml/collect_data.py`.
 
 ### Pages now
@@ -65,6 +65,12 @@ src/
 | Recognition (Module A, working camera) | `RecognitionPage.jsx` | TBD |
 | AAC (Module B) | `AacPage.jsx` | TBD |
 | Sign guide | `SignGuidePage.jsx` | TBD |
-| History | `HistoryPage.jsx` | TBD |
 
 Write the owner's name in the table when you start a page.
+
+### No stored patient history
+
+We decided **not to store any patient history**. There is no History page and no logging to a database.
+The nurse can still see the conversation of the current visit as a list on the Recognition screen. It is kept
+in the browser's memory only and disappears when the visit ends or the page is closed.
+See `docs/DECISIONS.md`.
