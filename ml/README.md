@@ -21,7 +21,9 @@ Keys (click the camera window first):
 | R | auto-record on/off (about 5 samples per second) |
 | Q or ESC | quit |
 
-- Goal: 100 samples per sign per participant, 20 signs.
+- Goal: 100 samples per sign per participant, 37 signs (3,700 rows per person).
+  The full list, grouped by sentence slot, is `SIGNS_BY_SLOT` at the top of `collect_data.py`.
+  Tip: do one group at a time (e.g. all symptoms first). Auto-record (R) takes about 20 seconds per sign.
 - Vary hand position, distance, speed and lighting a little between samples.
 - Each participant gets their own file: `data/landmarks_P01.csv`, `data/landmarks_P02.csv`, ...
   Running again with the same ID continues where you stopped.
@@ -31,12 +33,14 @@ Keys (click the camera window first):
 
 Film each sign (phone is fine), then let the script do the tracking.
 
-1. Put videos in a folder per sign (folder name = label, must match the 20 signs):
+1. Put videos in a folder per sign (folder name = label, must match the 37 signs):
    ```
    ml/videos/pain/clip1.mp4
    ml/videos/pain/clip2.mp4
    ml/videos/thank_you/take1.mov
+   ml/videos/last_night/clip1.mp4
    ```
+   Two-word signs use an underscore: `last_night`, `a_little`, `thank_you` (a space or a dash also works).
 2. Run:
    ```bash
    python extract_from_video.py --participant P01

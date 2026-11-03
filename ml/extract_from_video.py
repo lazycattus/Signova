@@ -8,7 +8,7 @@ Put your videos in folders named after the sign:
         help/      take1.mov
         thank_you/ ...
 
-The folder name is the label (must be one of the 20 signs in collect_data.py).
+The folder name is the label (must be one of the 37 signs in collect_data.py).
 The script runs MediaPipe on the frames, and saves the SAME rows as
 collect_data.py: participant_id, label, then 126 numbers
 (left hand 63 + right hand 63, zeros if a hand is missing).
@@ -120,7 +120,7 @@ def main():
         raise SystemExit(f"Video folder not found: {args.videos}")
     videos, unknown = find_videos(args.videos)
     if unknown:
-        print("Skipped folders (name is not one of the 20 signs):", ", ".join(unknown))
+        print("Skipped folders (name is not one of the 37 signs):", ", ".join(unknown))
         print("Valid names:", ", ".join(SIGNS), "\n")
     if not videos:
         raise SystemExit("No videos found. Put them in videos/<sign>/clip.mp4")
