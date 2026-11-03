@@ -62,15 +62,11 @@ src/
 | Page | File | Owner |
 | --- | --- | --- |
 | Home | `HomePage.jsx` | TBD |
-| Recognition (Module A, working camera) | `RecognitionPage.jsx` | TBD |
-| AAC (Module B) | `AacPage.jsx` | TBD |
-| Sign guide | `SignGuidePage.jsx` | TBD |
+| Recognition (Module A, working camera) | `RecognitionPage.jsx` | Aina |
+| AAC (Module B) | `AacPage.jsx` | Yee Han |
+| Sign guide | `SignGuidePage.jsx` | Aina |
+
+Planned (create the file when you start): emergency alert, visit list (on screen, not saved),
+nurse sign-in, patient queue, staff queue console.
 
 Write the owner's name in the table when you start a page.
-
-### No stored patient history
-
-We decided **not to store any patient history**. There is no History page and no logging to a database.
-The nurse can still see the conversation of the current visit as a list on the Recognition screen. It is kept
-in the browser's memory only and disappears when the visit ends or the page is closed.
-See `docs/DECISIONS.md`.
