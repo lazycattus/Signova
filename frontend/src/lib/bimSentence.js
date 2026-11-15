@@ -34,14 +34,14 @@ for (const [slot, list] of Object.entries(RAW)) {
 
 // Chip colours per slot (full class names so Tailwind can see them).
 export const SLOT_STYLE = {
-  symptom: { label: 'Symptom', box: 'border-red-400 bg-red-50', tag: 'text-red-600' },
-  body: { label: 'Body', box: 'border-purple-400 bg-purple-50', tag: 'text-purple-700' },
-  time: { label: 'Time', box: 'border-blue-400 bg-blue-50', tag: 'text-blue-700' },
-  intensity: { label: 'Intensity', box: 'border-orange-400 bg-orange-50', tag: 'text-orange-700' },
-  need: { label: 'Need', box: 'border-teal-500 bg-teal-50', tag: 'text-teal-700' },
-  question: { label: 'Question', box: 'border-amber-400 bg-amber-50', tag: 'text-amber-700' },
-  reply: { label: 'Reply', box: 'border-slate-400 bg-slate-50', tag: 'text-slate-600' },
-  emergency: { label: 'Emergency', box: 'border-red-600 bg-red-100', tag: 'text-red-700' },
+  symptom: { label: 'Symptom', ms: 'Gejala', box: 'border-red-400 bg-red-50', tag: 'text-red-600' },
+  body: { label: 'Body', ms: 'Badan', box: 'border-purple-400 bg-purple-50', tag: 'text-purple-700' },
+  time: { label: 'Time', ms: 'Masa', box: 'border-blue-400 bg-blue-50', tag: 'text-blue-700' },
+  intensity: { label: 'Intensity', ms: 'Tahap', box: 'border-orange-400 bg-orange-50', tag: 'text-orange-700' },
+  need: { label: 'Need', ms: 'Keperluan', box: 'border-teal-500 bg-teal-50', tag: 'text-teal-700' },
+  question: { label: 'Question', ms: 'Soalan', box: 'border-amber-400 bg-amber-50', tag: 'text-amber-700' },
+  reply: { label: 'Reply', ms: 'Jawapan', box: 'border-slate-400 bg-slate-50', tag: 'text-slate-600' },
+  emergency: { label: 'Emergency', ms: 'Kecemasan', box: 'border-red-600 bg-red-100', tag: 'text-red-700' },
 }
 
 // How each symptom reads in a sentence: Malay after "Saya", English after "I",

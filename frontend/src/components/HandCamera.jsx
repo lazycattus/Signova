@@ -6,6 +6,56 @@ const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/w
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
 
+// Messages under the camera. Pass lang="ms" for Bahasa Malaysia (default is English).
+const TEXT = {
+  en: {
+    loading: 'Loading hand detector...',
+    camera: 'Starting camera...',
+    show: 'Show your hand(s) to the camera',
+    one: 'One hand detected',
+    both: 'Both hands detected',
+    blocked: 'Camera permission was blocked. Allow camera access and refresh.',
+    noCamera: 'No camera found. Connect a camera and refresh.',
+    busy: 'The camera is being used by another app. Close that app, then pick the camera again.',
+    offline: 'Could not load the hand detector. Check your internet connection and refresh.',
+    failed: (m) => `Could not start: ${m}`,
+  },
+  ms: {
+    loading: 'Memuatkan pengesan tangan...',
+    camera: 'Memulakan kamera...',
+    show: 'Tunjukkan tangan anda ke kamera',
+    one: 'Satu tangan dikesan',
+    both: 'Kedua-dua tangan dikesan',
+    blocked: 'Kebenaran kamera disekat. Benarkan akses kamera dan muat semula.',
+    noCamera: 'Tiada kamera dijumpai. Sambungkan kamera dan muat semula.',
+    busy: 'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi itu, kemudian pilih kamera semula.',
+    offline: 'Tidak dapat memuatkan pengesan tangan. Semak sambungan internet dan muat semula.',
+    failed: (m) => `Tidak dapat dimulakan: ${m}`,
+  },
+}
+
+// Turn a thrown error into a key of TEXT (or a raw message) so it can be translated when shown.
+function toError(err) {
+  if (err?.name === 'NotAllowedError') return { key: 'blocked' }
+  if (err?.name === 'NotFoundError') return { key: 'noCamera' }
+  if (err?.name === 'NotReadableError') return { key: 'busy' }
+  if (err instanceof Error) return { detail: err.message }
+  return { key: 'offline' } // the model files are downloaded online, a network failure is not an Error
+}
+
+// Open the chosen camera. If it is gone (unplugged) fall back to the default one.
+async function openStream(deviceId) {
+  const size = { width: 640, height: 480 }
+  if (deviceId) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({ video: { ...size, deviceId: { exact: deviceId } } })
+    } catch (err) {
+      if (err.name !== 'OverconstrainedError' && err.name !== 'NotFoundError') throw err
+    }
+  }
+  return navigator.mediaDevices.getUserMedia({ video: { ...size, facingMode: 'user' } })
+}
+
 /**
  * Shows the webcam, runs MediaPipe hand detection on every frame,
  * and draws the 21 landmark dots on each hand (up to 2 hands).
@@ -13,26 +63,33 @@ const MODEL_URL =
  * onLandmarks(features, handCount) is called each frame at least one hand is seen.
  * `features` is 126 numbers (left hand 63 + right hand 63, zeros if a hand is
  * missing). This is what we send to the classifier later.
+ *
+ * deviceId (optional): which camera to use. Changing it switches camera without reloading the detector.
+ * onStream(deviceId) (optional): called when a camera has started, with the id that is really in use.
+ * lang (optional): "en" or "ms" for the messages.
  */
-export default function HandCamera({ onLandmarks }) {
+export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStream }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const landmarkerRef = useRef(null)
   const onLandmarksRef = useRef(onLandmarks)
-  const [status, setStatus] = useState('Loading hand detector...')
-  const [error, setError] = useState('')
+  const onStreamRef = useRef(onStream)
+  const t = TEXT[lang] ?? TEXT.en
+  const [status, setStatus] = useState('loading') // a key of TEXT, translated when shown
+  const [error, setError] = useState(null) // { key } or { detail }
+  const [ready, setReady] = useState(false) // hand detector loaded
 
-  // keep latest callback without restarting the camera loop
+  // keep latest callbacks without restarting the camera loop
   useEffect(() => {
     onLandmarksRef.current = onLandmarks
-  }, [onLandmarks])
+    onStreamRef.current = onStream
+  }, [onLandmarks, onStream])
 
+  // 1. Load the hand detector once.
   useEffect(() => {
-    let handLandmarker
-    let stream
-    let rafId
     let cancelled = false
-
-    async function start() {
+    let handLandmarker
+    async function load() {
       try {
         const vision = await FilesetResolver.forVisionTasks(WASM_URL)
         handLandmarker = await HandLandmarker.createFromOptions(vision, {
@@ -44,36 +101,56 @@ export default function HandCamera({ onLandmarks }) {
           handLandmarker.close()
           return
         }
+        landmarkerRef.current = handLandmarker
+        setReady(true)
+      } catch (err) {
+        console.error(err)
+        setError(toError(err))
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+      landmarkerRef.current = null
+      handLandmarker?.close()
+    }
+  }, [])
 
-        setStatus('Starting camera...')
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: 'user' },
-        })
+  // 2. Start the camera and the detection loop. Runs again when the camera choice changes.
+  useEffect(() => {
+    if (!ready) return
+    let cancelled = false
+    let stream
+    let rafId
+    let lastVideoTime = -1
+
+    async function start() {
+      try {
+        setError(null)
+        setStatus('camera')
+        stream = await openStream(deviceId)
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop())
           return
         }
-
         const video = videoRef.current
         video.srcObject = stream
         await video.play()
-        setStatus('Show your hand(s) to the camera')
+        setStatus('show')
+        onStreamRef.current?.(stream.getVideoTracks()[0]?.getSettings().deviceId ?? '')
         loop()
       } catch (err) {
+        if (cancelled) return
         console.error(err)
-        setError(
-          err.name === 'NotAllowedError'
-            ? 'Camera permission was blocked. Allow camera access and refresh.'
-            : `Could not start: ${err.message}`,
-        )
+        setError(toError(err))
       }
     }
 
-    let lastVideoTime = -1
     function loop() {
       const video = videoRef.current
       const canvas = canvasRef.current
-      if (!video || !canvas) return
+      const handLandmarker = landmarkerRef.current
+      if (cancelled || !video || !canvas || !handLandmarker) return
 
       if (video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime
@@ -94,9 +171,9 @@ export default function HandCamera({ onLandmarks }) {
             drawing.drawLandmarks(hand, { color: '#ef4444', radius: 4 })
           }
           onLandmarksRef.current?.(flattenHands(result), result.landmarks.length)
-          setStatus(result.landmarks.length === 2 ? 'Both hands detected' : 'One hand detected')
+          setStatus(result.landmarks.length === 2 ? 'both' : 'one')
         } else {
-          setStatus('Show your hand(s) to the camera')
+          setStatus('show')
         }
       }
       rafId = requestAnimationFrame(loop)
@@ -104,14 +181,13 @@ export default function HandCamera({ onLandmarks }) {
 
     start()
 
-    // cleanup when the component is removed
+    // cleanup when the component is removed or the camera changes
     return () => {
       cancelled = true
       cancelAnimationFrame(rafId)
-      stream?.getTracks().forEach((t) => t.stop())
-      handLandmarker?.close()
+      stream?.getTracks().forEach((track) => track.stop())
     }
-  }, [])
+  }, [ready, deviceId])
 
   return (
     <div className="w-full max-w-xl">
@@ -129,7 +205,7 @@ export default function HandCamera({ onLandmarks }) {
         />
       </div>
       <p className={`mt-3 text-center text-sm ${error ? 'text-red-600' : 'text-slate-600'}`}>
-        {error || status}
+        {error ? (error.detail ? t.failed(error.detail) : t[error.key]) : t[status]}
       </p>
     </div>
   )
