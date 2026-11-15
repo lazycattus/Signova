@@ -7,9 +7,6 @@ export const order = 0
 // Landing / mode selector, converted from the Stitch design.
 // Header, footer and the EN/BM + emergency bar belong to Layout.jsx (shared), not this page.
 
-// Demo values shown in the patient badge. Replace with real data later.
-const PATIENT = { name: 'Farhan', bed: 'Bed 12', ward: 'Wad 5B' }
-
 // Small picture tokens shown on the AAC card.
 const AAC_TOKENS = [
   { icon: 'healing', color: 'text-emergency-red', label: 'Sakit / Pain' },
@@ -30,7 +27,7 @@ const QUICK_ACTIONS = [
     en: 'Call Nurse',
     bm: 'Panggil Jururawat',
     box: 'bg-emergency-red-bg text-emergency-red',
-    toast: `Jururawat telah dimaklumkan (${PATIENT.ward}) / Nurse notified for ${PATIENT.bed}`,
+    toast: 'Jururawat telah dimaklumkan / The nurse has been notified',
   },
   {
     id: 'pen',
@@ -114,11 +111,9 @@ export default function HomePage() {
       <div className="mb-3 flex items-center justify-center">
         <div className="inline-flex items-center gap-space-xs rounded-full bg-surface-container-low px-space-md py-1.5 shadow-sm">
           <span className="h-2 w-2 rounded-full bg-secondary" />
-          <span className="text-label-sm uppercase tracking-wide text-secondary">Pesakit Aktif / Patient Active</span>
+          <span className="text-label-sm uppercase tracking-wide text-secondary">Kaunter Bantuan / Help Desk</span>
           <span className="text-label-sm text-text-muted">•</span>
-          <span className="text-label-md font-semibold text-primary">
-            Hello, {PATIENT.name} ({PATIENT.bed})
-          </span>
+          <span className="text-label-md font-semibold text-primary">Selamat datang / Welcome</span>
         </div>
       </div>
 
@@ -147,7 +142,7 @@ export default function HomePage() {
             <HandLandmarks />
             <div className="absolute bottom-3 left-4 flex items-center gap-1.5 rounded-lg bg-surface-card/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
               <span className="h-2 w-2 animate-ping rounded-full bg-success-green" />
-              <span className="text-label-sm text-on-surface">Bed Camera Ready</span>
+              <span className="text-label-sm text-on-surface">Camera Ready / Kamera Sedia</span>
             </div>
           </div>
 
@@ -155,7 +150,7 @@ export default function HomePage() {
             <h2 className="mb-1 text-headline-md text-primary">Sign Language (BIM)</h2>
             <p className="mb-2 text-bilingual-primary text-secondary">Bahasa Isyarat Malaysia</p>
             <p className="text-body-md text-text-muted">
-              Real-time gesture recognition using bedside camera. Translates hand signs instantly to spoken English and Malay.
+              Real-time gesture recognition using the help desk camera. Translates your hand signs into English and Malay for the nurse.
             </p>
           </div>
 
@@ -221,7 +216,7 @@ export default function HomePage() {
       <div className="mx-auto w-full max-w-4xl">
         <div className="mb-4 text-center">
           <span className="text-label-sm uppercase tracking-wider text-text-muted">
-            Alternative &amp; Immediate Hospital Support / Bantuan Pantas
+            Alternative &amp; Immediate Help / Bantuan Pantas
           </span>
         </div>
         <div className="grid grid-cols-1 gap-space-md sm:grid-cols-3">
@@ -254,7 +249,7 @@ export default function HomePage() {
       >
         <div className="flex items-center gap-space-sm rounded-xl bg-inverse-surface px-space-lg py-3 text-inverse-on-surface shadow-xl">
           <Icon name={toast?.icon ?? 'check_circle'} className="text-[22px] text-secondary-fixed" />
-          <span className="text-label-md">{toast?.toast ?? 'Permintaan dihantar / Request dispatched to ward desk'}</span>
+          <span className="text-label-md">{toast?.toast ?? 'Permintaan dihantar / Request sent to the help desk'}</span>
         </div>
       </div>
     </div>

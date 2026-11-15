@@ -2,6 +2,17 @@
 
 Short record of project decisions, newest first. Add a line when you and your partner decide something.
 
+## 16 Nov 2026: Help desk and patient only, no bed or ward wording
+
+- **Decision:** for now the system is a conversation between the help desk (nurse) and the patient. It is not a
+  bedside system, so the screens do not mention bed, ward or the patient's name.
+- **Why:** if a doctor used it, the system would need to know which patient it is, which means a patient ID.
+  There is no patient ID yet, and no patient information is stored (see 3 Nov).
+- **Changed:** Home page wording (no "Bed 12", "Wad 5B", "Hello, Farhan", "bedside camera"). The Module B AAC
+  board already had its bedside and ward identity removed.
+- **Not decided:** doctor use. It would need a patient ID first.
+- **Note:** the hospital / bed bar from the Stitch design (footer) should not be built with bed or ward text.
+
 ## 3 Nov 2026: No patient history is stored
 
 - **Decision:** the system does not save session history. There is no History page and no logging of sentences,
