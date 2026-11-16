@@ -18,6 +18,9 @@ Short record of project decisions, newest first. Add a line when you and your pa
   after a headshake exists (`HEADSHAKE_MEANS_NO` in `recognizer.js`) but stays off until a BIM teacher or Deaf signer
   confirms a headshake is used like that. A wrong "no" would be a risky mistake. The head and face numbers are still
   used by the model to tell signs apart.
+- **40 signs, not 37:** BIM signs the person by pointing, so `saya` (I), `awak` (you) and `dia` (he or she) are real signs now
+  (a new "subject" group). They change who the sentence is about: "dia" + "fever" = "He or she has a fever" (a parent or carer
+  speaking for someone else). "saya" is not said twice. The SRS and proposal still say 37 and need updating.
 - **Not decided:** how many recordings and people are needed for a good accuracy. Check the TEST accuracy that
   `train.py` prints and record more clips for the signs that get mixed up.
 

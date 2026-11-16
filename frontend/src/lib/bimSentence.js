@@ -1,4 +1,4 @@
-// The 37 healthcare BIM signs (SRS v2) and a simple sentence builder.
+// The 40 healthcare BIM signs (the 37 of SRS v2 + saya, awak, dia) and a simple sentence builder.
 // ids and slots match SIGNS_BY_SLOT in ml/collect_data.py, so the classifier output
 // (a sign id) can be passed straight into buildSentence() later.
 
@@ -25,6 +25,7 @@ const RAW = {
   question: [['what', 'apa', 'what'], ['when', 'bila', 'when']],
   reply: [['yes', 'ya', 'yes'], ['no', 'tidak', 'no'], ['repeat', 'ulang', 'repeat'], ['thank_you', 'terima kasih', 'thank you']],
   emergency: [['emergency', 'kecemasan', 'emergency'], ['help', 'tolong', 'help'], ['ambulance', 'ambulans', 'ambulance'], ['stop', 'berhenti', 'stop']],
+  subject: [['saya', 'saya', 'I'], ['awak', 'awak', 'you'], ['dia', 'dia', 'he or she']], // BIM points to the person
 }
 
 export const SIGNS = {}
@@ -42,6 +43,7 @@ export const SLOT_STYLE = {
   question: { label: 'Question', ms: 'Soalan', box: 'border-amber-400 bg-amber-50', tag: 'text-amber-700' },
   reply: { label: 'Reply', ms: 'Jawapan', box: 'border-slate-400 bg-slate-50', tag: 'text-slate-600' },
   emergency: { label: 'Emergency', ms: 'Kecemasan', box: 'border-red-600 bg-red-100', tag: 'text-red-700' },
+  subject: { label: 'Who', ms: 'Siapa', box: 'border-sky-400 bg-sky-50', tag: 'text-sky-700' },
 }
 
 // How each symptom reads in a sentence: Malay after "Saya", English after "I",
@@ -80,13 +82,34 @@ const EMERGENCY = {
   ambulance: ['Panggil ambulans!', 'Call an ambulance!'], stop: ['Berhenti.', 'Stop.'],
 }
 
-// "I need ..." the other way round (patient signs NO + a need, e.g. answering "Do you need medicine?")
-const NEED_NO = {
-  doctor: ['Saya tidak perlukan doktor.', 'I do not need the doctor.'],
-  nurse: ['Saya tidak perlukan jururawat.', 'I do not need the nurse.'],
-  medicine: ['Saya tidak perlukan ubat.', 'I do not need medicine.'],
-  water: ['Saya tidak perlukan air.', 'I do not need water.'],
-  toilet: ['Saya tidak perlu ke tandas.', 'I do not need the toilet.'],
+// Who the sentence is about. Saya is the default (and is not repeated if signed).
+const PERSON = {
+  saya: { bm: 'Saya', en: 'I', poss: 'my', about: ['Ini tentang saya.', 'This is about me.'] },
+  awak: { bm: 'Awak', en: 'You', poss: 'your', about: ['Ini tentang awak.', 'This is about you.'] },
+  dia: { bm: 'Dia', en: 'He or she', poss: 'his or her', about: ['Ini tentang dia.', 'This is about him or her.'] },
+}
+
+// The English verbs above are written for "I". This changes them for "you" and "he or she".
+function agree(text, who) {
+  const third = who === 'dia'
+  let out = text.replace(/\bmy\b/g, PERSON[who].poss)
+  if (who === 'saya') return out
+  out = out
+    .replace(/^am not /, third ? 'is not ' : 'are not ')
+    .replace(/^am /, third ? 'is ' : 'are ')
+    .replace(/^do not /, third ? 'does not ' : 'do not ')
+    .replace(/^have /, third ? 'has ' : 'have ')
+    .replace(/^feel /, third ? 'feels ' : 'feel ')
+  return out
+}
+
+// One line for a need. negative = the person signed NO ("Do you need medicine?" "No.")
+function needLine(id, who, negative) {
+  const [nb, ne] = NEED[id]
+  const P = PERSON[who]
+  const verb = who === 'dia' ? (negative ? 'does not need' : 'needs') : negative ? 'do not need' : 'need'
+  const bm = id === 'toilet' ? `${P.bm} ${negative ? 'tidak ' : ''}perlu ke tandas.` : `${P.bm} ${negative ? 'tidak ' : ''}perlukan ${nb}.`
+  return [bm, `${P.en} ${verb} ${ne}.`]
 }
 
 // A sign alone still has to make a full sentence (supervisor rule: every communication is at least
@@ -120,12 +143,17 @@ export function buildSentence(ids) {
   if (signs.length === 0) return null
   const of = (slot) => signs.filter((s) => s.slot === slot)
 
+  const subjectSign = of('subject')[0]
+  const who = subjectSign?.id ?? 'saya'
+  const P = PERSON[who]
+
   const emergency = of('emergency')
   if (emergency.length) {
-    return {
-      bm: emergency.map((s) => EMERGENCY[s.id][0]).join(' '),
-      en: emergency.map((s) => EMERGENCY[s.id][1]).join(' '),
+    const lines = emergency.map((s) => EMERGENCY[s.id])
+    if (who === 'dia' && emergency.some((s) => s.id === 'help')) {
+      return { bm: 'Tolong dia!', en: 'Help him or her!' } // a carer calling for help for someone else
     }
+    return { bm: lines.map((l) => l[0]).join(' '), en: lines.map((l) => l[1]).join(' ') }
   }
 
   const symptoms = of('symptom')
@@ -140,6 +168,7 @@ export function buildSentence(ids) {
   const negated = saidNo && symptoms.length > 0
   const bm = []
   const en = []
+  let usedPerson = false // did a sentence use the person (I / you / he or she)?
 
   for (const sym of symptoms) {
     const t = SYMPTOM[sym.id]
@@ -151,18 +180,20 @@ export function buildSentence(ids) {
     }
     if (time) { b += ` ${time[0]}`; e += ` ${time[1]}` }
     if (intensity) { b += ` ${intensity.bm}`; e += intensity.id === 'very' ? ' very much' : ' a little' }
-    bm.push(`Saya ${b}.`)
-    en.push(`I ${e}.`)
+    bm.push(`${P.bm} ${b}.`)
+    en.push(`${P.en} ${agree(e, who)}.`)
+    usedPerson = true
   }
 
   // body part alone (no symptom): "It hurts in my head."
   if (!symptoms.length && body) {
     let b = `Sakit di bahagian ${body.bm}`
-    let e = `It hurts in my ${body.en}`
+    let e = `It hurts in ${P.poss} ${body.en}`
     if (time) { b += ` ${time[0]}`; e += ` ${time[1]}` }
     if (intensity) { b += ` ${intensity.bm}`; e += intensity.id === 'very' ? ' very much' : ' a little' }
     bm.push(`${b}.`)
     en.push(`${e}.`)
+    usedPerson = true
   }
 
   const negNeeds = saidNo && !question // "no" + a need = "I do not need ..."
@@ -171,15 +202,11 @@ export function buildSentence(ids) {
     if (question) {
       bm.push(`${cap(nb)} ${question.bm}?`)
       en.push(question.id === 'when' ? `When is ${ne} coming?` : `What about ${ne}?`)
-    } else if (negNeeds) {
-      bm.push(NEED_NO[n.id][0])
-      en.push(NEED_NO[n.id][1])
-    } else if (n.id === 'toilet') {
-      bm.push('Saya perlu ke tandas.')
-      en.push('I need the toilet.')
     } else {
-      bm.push(`Saya perlukan ${nb}.`)
-      en.push(`I need ${ne}.`)
+      const [lb, le] = needLine(n.id, who, negNeeds)
+      bm.push(lb)
+      en.push(le)
+      usedPerson = true
     }
   }
   if (question && !needs.length && !bm.length) {
@@ -217,6 +244,12 @@ export function buildSentence(ids) {
     if (r.id === 'yes' || r.id === 'no') continue // handled above
     bm.push(REPLY[r.id][0])
     en.push(REPLY[r.id][1])
+  }
+
+  // The person was signed but no sentence used it: say who it is about (nothing to add for "saya" with other words)
+  if (subjectSign && !usedPerson && (!bm.length || who !== 'saya')) {
+    bm.unshift(P.about[0])
+    en.unshift(P.about[1])
   }
 
   return { bm: bm.join(' '), en: en.join(' ') }

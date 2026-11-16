@@ -31,7 +31,7 @@ import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
-# The 37 healthcare BIM signs from the SRS (v2), grouped by the slot each one fills
+# The 40 healthcare BIM signs (the 37 from the SRS v2 + saya, awak, dia), grouped by the slot each one fills
 # in the sentence builder. Names must match the video folder names too.
 SIGNS_BY_SLOT = {
     "symptom": ["pain", "dizzy", "breathe", "headache", "fever", "allergy", "hungry",
@@ -43,9 +43,10 @@ SIGNS_BY_SLOT = {
     "question": ["what", "when"],
     "reply": ["yes", "no", "repeat", "thank_you"],
     "emergency": ["emergency", "help", "ambulance", "stop"],
+    "subject": ["saya", "awak", "dia"],  # I, you, he/she (BIM signs these by pointing)
 }
 SIGNS = [sign for group in SIGNS_BY_SLOT.values() for sign in group]
-assert len(SIGNS) == 37 and len(set(SIGNS)) == 37, "SRS says 37 different signs"
+assert len(SIGNS) == 40 and len(set(SIGNS)) == 40, "expected 40 different signs"
 
 POINTS_PER_HAND = 21
 NUMBERS_PER_HAND = POINTS_PER_HAND * 3  # 63

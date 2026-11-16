@@ -199,7 +199,7 @@ def main():
     from collect_data import SIGNS
     present = {c[1] for c in clips}
     labels = [s for s in SIGNS if s in present]
-    print(f"{len(clips)} clips, {len(labels)} of 37 signs.")
+    print(f"{len(clips)} clips, {len(labels)} of {len(SIGNS)} signs.")
     counts = {l: sum(1 for c in clips if c[1] == l) for l in labels}
     few = [l for l, n in counts.items() if n < 3]
     if few:

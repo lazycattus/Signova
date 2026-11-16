@@ -31,7 +31,7 @@ import numpy as np
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
-from collect_data import MODEL_PATH as HAND_MODEL_PATH, ensure_model as ensure_hand_model
+from collect_data import MODEL_PATH as HAND_MODEL_PATH, SIGNS, ensure_model as ensure_hand_model
 from extract_from_video import MAX_WIDTH, find_videos
 from features import FPS, HAND_NUMBERS, FEATURE_COUNT, frame_features, read_face, slot_hands
 
@@ -121,7 +121,7 @@ def main():
 
     found, unknown = find_videos(args.videos)
     if unknown:
-        print("Skipped folders (not one of the 37 signs):", ", ".join(unknown))
+        print("Skipped folders (not one of the 40 signs):", ", ".join(unknown))
     if not found:
         print(f"No videos found in {args.videos}/<sign>/")
         return
@@ -159,7 +159,7 @@ def main():
     for lab in labels:
         per[lab] = per.get(lab, 0) + 1
     print(f"\nSaved {len(clips)} clips to {out} in {time.time() - start:.0f}s")
-    print(f"Signs covered: {len(per)} of 37. Fewest clips: {min(per.values())}")
+    print(f"Signs covered: {len(per)} of {len(SIGNS)}. Fewest clips: {min(per.values())}")
     if no_face:
         print(f"WARNING: no face was found in {no_face} clip(s). Head/face numbers are empty there.")
 

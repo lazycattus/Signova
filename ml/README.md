@@ -21,7 +21,7 @@ Keys (click the camera window first):
 | R | auto-record on/off (about 5 samples per second) |
 | Q or ESC | quit |
 
-- Goal: 100 samples per sign per participant, 37 signs (3,700 rows per person).
+- Goal: 100 samples per sign per participant, 40 signs (4,000 rows per person).
   The full list, grouped by sentence slot, is `SIGNS_BY_SLOT` at the top of `collect_data.py`.
   Tip: do one group at a time (e.g. all symptoms first). Auto-record (R) takes about 20 seconds per sign.
 - Vary hand position, distance, speed and lighting a little between samples.
@@ -33,7 +33,7 @@ Keys (click the camera window first):
 
 Film each sign (phone is fine), then let the script do the tracking.
 
-1. Put videos in a folder per sign (folder name = label, must match the 37 signs):
+1. Put videos in a folder per sign (folder name = label, must match the 40 signs):
    ```
    ml/videos/pain/clip1.mp4
    ml/videos/pain/clip2.mp4
