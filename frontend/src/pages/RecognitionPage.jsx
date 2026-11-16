@@ -9,8 +9,9 @@ export const title = 'Recognition'
 export const order = 10
 
 // Module A (deaf user). Converted from the Stitch design.
-// The camera is the real <HandCamera />. The classifier is not trained yet, so the signed
-// words come from the shortcut / demo buttons (same ids the classifier will output later).
+// The camera is the real <HandCamera recognize />. When a trained model is in public/models/signova/
+// the signed words come from it (and the word is drawn on the camera picture). Until then, and as a
+// backup, the shortcut / demo buttons add the same word ids.
 // Header bar is part of this page. The hospital footer + emergency bar belong in Layout.jsx.
 
 // Words the patient can tap while the classifier is not ready.
@@ -193,9 +194,9 @@ export default function RecognitionPage() {
     return () => clearInterval(t)
   }, [])
 
-  function addWord(id) {
+  const addWord = useCallback((id) => {
     setWords((w) => (w.includes(id) ? w : [...w, id]))
-  }
+  }, [])
 
   function pickDemo(i) {
     setDemo(i)
@@ -357,7 +358,7 @@ export default function RecognitionPage() {
             </div>
             {/* HandCamera is used as it is. These classes only make it fill this dark box. */}
             <div className="[&>div]:max-w-none [&>div>div]:mx-auto [&>div>div]:w-[min(100%,calc(52dvh*1.3333))] [&_p]:pb-3 [&_p]:text-slate-300">
-              <HandCamera onLandmarks={onLandmarks} lang={isMs ? 'ms' : 'en'} deviceId={cameraId || undefined} onStream={onStream} enabled={cameraOn} />
+              <HandCamera onLandmarks={onLandmarks} lang={isMs ? 'ms' : 'en'} deviceId={cameraId || undefined} onStream={onStream} enabled={cameraOn} recognize onSign={addWord} />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-slate-800 bg-slate-900/80 px-4 py-2 text-xs font-medium text-slate-300">
               <span>📹 {t.camera1}</span>
