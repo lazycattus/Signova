@@ -8,8 +8,8 @@ import { Badge, useFlash, useT } from './ui.tsx'
 
 /* ---------- Quick replies (fixed left rail) ---------- */
 const qrTone = {
-  yes: { btn: 'min-h-16 border-transparent bg-yes-deep text-[22px] text-white hover:border-white/40 max-md:min-h-14 max-md:text-[19px]', qi: 'bg-white/15 text-white' },
-  no: { btn: 'min-h-16 border-transparent bg-no-deep text-[22px] text-white hover:border-white/40 max-md:min-h-14 max-md:text-[19px]', qi: 'bg-white/15 text-white' },
+  yes: { btn: 'min-h-16 border-transparent bg-yes-deep text-[22px] text-white hover:border-white/40 max-md:min-h-14 max-md:text-[19px] short:min-h-14 short:text-[19px]', qi: 'bg-white/15 text-white' },
+  no: { btn: 'min-h-16 border-transparent bg-no-deep text-[22px] text-white hover:border-white/40 max-md:min-h-14 max-md:text-[19px] short:min-h-14 short:text-[19px]', qi: 'bg-white/15 text-white' },
 }
 
 function QuickReply({ q }: { q: Quick }) {
@@ -22,7 +22,7 @@ function QuickReply({ q }: { q: Quick }) {
       ref={flash.ref}
       onClick={() => { flash.fire(); addItem({ kind: 'reply', say: q.say, short: q.label }, 'Quick reply') }}
       className={cn(
-        'flex items-center gap-3 rounded-[14px] border py-2 pr-3 pl-2.5 text-left leading-[1.2] font-bold shadow-[var(--sh-sm)] transition-[scale,border-color] duration-200 ease-spring active:scale-[.97] max-md:flex-none max-md:pr-4',
+        'flex items-center gap-3 rounded-[14px] border py-2 pr-3 pl-2.5 text-left leading-[1.2] font-bold shadow-[var(--sh-sm)] transition-[scale,border-color] duration-200 ease-spring active:scale-[.97] max-md:flex-none max-md:pr-4 short:flex-none short:pr-4',
         tone ? tone.btn : 'min-h-[50px] border-line bg-surface text-[17px] hover:border-line-2',
         flash.on && 'animate-nudge',
       )}
@@ -36,9 +36,9 @@ function QuickReply({ q }: { q: Quick }) {
 function Rail() {
   const t = useT()
   return (
-    <aside className="relative flex min-h-0 flex-col gap-1.5 overflow-auto p-0.5 max-md:-mx-5 max-md:flex-row max-md:px-5 max-md:pb-1 max-md:[scrollbar-width:none] max-sm:-mx-3 max-sm:px-3">
+    <aside className="relative flex min-h-0 flex-col gap-1.5 overflow-auto p-0.5 max-md:-mx-5 max-md:flex-row max-md:px-5 max-md:pb-1 max-md:[scrollbar-width:none] max-sm:-mx-3 max-sm:px-3 short:flex-row short:overflow-x-auto short:overflow-y-hidden short:[scrollbar-width:none]">
       <Badge n={4} />
-      <h3 className="p-0.5 text-[14px] font-bold text-muted max-md:sr-only">{t('Quick replies', 'Balas pantas')}</h3>
+      <h3 className="p-0.5 text-[14px] font-bold text-muted max-md:sr-only short:sr-only">{t('Quick replies', 'Balas pantas')}</h3>
       {QUICK.map(q => <QuickReply key={q.k} q={q} />)}
     </aside>
   )
@@ -76,7 +76,7 @@ function Tabs() {
   const lang = useBoard(s => s.lang)
   const setTab = useBoard(s => s.setTab)
   return (
-    <nav role="tablist" className="relative inline-flex max-w-full flex-wrap gap-1 self-start rounded-[14px] border border-line bg-surface-2 p-1 max-md:flex-nowrap max-md:overflow-x-auto max-md:[scrollbar-width:none]">
+    <nav role="tablist" className="relative inline-flex max-w-full flex-wrap gap-1 self-start short:flex-nowrap short:overflow-x-auto short:[scrollbar-width:none] short:shrink-0 rounded-[14px] border border-line bg-surface-2 p-1 max-md:flex-nowrap max-md:overflow-x-auto max-md:[scrollbar-width:none]">
       <Badge n={7} />
       {PROFILES[profile].tabs.map(t => {
         const on = tab === t.k
@@ -130,7 +130,7 @@ function Opener() {
       ref={flash.ref}
       onClick={() => { flash.fire(); addCard('opener') }}
       className={cn(
-        'relative col-span-2 flex min-h-[132px] items-stretch overflow-hidden rounded-[14px] border bg-surface text-left shadow-[var(--sh-sm)] transition-[scale,border-color] duration-200 ease-spring active:scale-[.98] max-sm:col-span-full max-sm:min-h-[72px]',
+        'relative col-span-2 flex min-h-[132px] short:min-h-[104px] items-stretch overflow-hidden rounded-[14px] border bg-surface text-left shadow-[var(--sh-sm)] transition-[scale,border-color] duration-200 ease-spring active:scale-[.98] max-sm:col-span-full max-sm:min-h-[72px]',
         flash.on ? 'border-yes' : 'border-line-2 hover:border-brand-ink',
       )}
     >
@@ -160,7 +160,7 @@ function Card({ k }: { k: CardKey }) {
       data-cat={catOf(k)}
       onClick={() => { if (!action) flash.fire(); addCard(k) }}
       className={cn(
-        'group relative flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-[14px] border bg-cs px-3 pt-4 pb-3 text-center transition-[scale,border-color] duration-200 ease-spring active:scale-[.97] max-sm:min-h-[104px] max-sm:gap-1.5 max-sm:pt-3 max-sm:pb-2.5',
+        'group relative flex min-h-[132px] short:min-h-[104px] flex-col items-center justify-center gap-2 rounded-[14px] border bg-cs px-3 pt-4 pb-3 text-center transition-[scale,border-color] duration-200 ease-spring active:scale-[.97] max-sm:min-h-[104px] max-sm:gap-1.5 max-sm:pt-3 max-sm:pb-2.5',
         flash.on ? 'border-yes' : 'border-[color-mix(in_srgb,var(--c)_20%,transparent)] hover:border-c',
       )}
     >
@@ -189,7 +189,7 @@ function Legend({ keys }: { keys: CardKey[] }) {
   const cats = [...new Set(keys.filter(k => k !== 'opener').map(catOf))].filter(c => CAT_LABEL[c])
   if (cats.length < 2) return null
   return (
-    <ul aria-label="Colour key" className="m-0 mb-2.5 max-md:hidden flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[13px] font-semibold text-ink-2">
+    <ul aria-label="Colour key" className="m-0 mb-2.5 max-md:hidden short:hidden flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[13px] font-semibold text-ink-2">
       {cats.map(c => (
         <li key={c} data-cat={c} className="inline-flex items-center gap-1.5"><span className="size-3 rounded-[4px] bg-c" />{CAT_LABEL[c]![lang]}</li>
       ))}
@@ -202,7 +202,7 @@ function Content() {
   const tab = useBoard(s => s.tab)
   const keys = tabCards(profile, tab)
   return (
-    <div className="relative -m-1 min-h-0 flex-1 overflow-auto px-1 pt-1 pb-2.5 max-md:overflow-visible">
+    <div className="relative -m-1 min-h-0 flex-1 overflow-auto px-1 pt-1 pb-2.5 short:flex-none short:overflow-visible max-md:overflow-visible">
       <Badge n={8} />
       {tab === 'type' ? <TypePanel /> : tab === 'draw' ? <DrawPanel /> : (
         <>
@@ -218,10 +218,10 @@ function Content() {
 
 export function Board() {
   return (
-    <div className="grid min-h-0 grid-cols-[200px_1fr] gap-5 overflow-hidden px-5 pt-3.5 pb-3 max-md:grid-cols-1 max-md:gap-3 max-md:overflow-visible max-sm:px-3 max-sm:py-3">
+    <div className="grid min-h-0 grid-cols-[200px_1fr] gap-5 overflow-hidden px-5 pt-3.5 pb-3 short:grid-cols-1 short:grid-rows-[auto_minmax(0,1fr)] short:gap-2 short:pt-2 short:pb-2 max-md:grid-cols-1 max-md:gap-3 max-md:overflow-visible max-sm:px-3 max-sm:py-3">
       <AiStrip phone />
       <Rail />
-      <main className="flex min-h-0 min-w-0 flex-col gap-2.5 overflow-hidden max-md:overflow-visible">
+      <main className="flex min-h-0 min-w-0 flex-col gap-2.5 overflow-hidden short:overflow-x-hidden short:overflow-y-auto short:[overscroll-behavior:contain] max-md:overflow-visible">
         <StaffAsk />
         <Tabs />
         <Suggest />

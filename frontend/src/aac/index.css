@@ -31,6 +31,9 @@
 [data-cat="sos"]{--c:var(--danger);--cs:var(--no-soft)}
 
 @custom-variant night (&:where(.night, .night *));
+/* Wide but short screens (most laptops once the browser bars are removed): use the compact layout of phones, but keep the desktop look. */
+@custom-variant short (@media (min-width: 768px) and (max-height: 820px));
+@media (min-width: 768px) and (max-height: 820px) { :root { --foot: 66px } } /* slimmer bottom bar on short screens */
 
 @theme {
   --color-*: initial;

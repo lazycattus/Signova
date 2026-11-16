@@ -68,8 +68,8 @@ function Say() {
           <Icon name="check" className="size-3.5" />{t('Wording chosen by the patient', 'Ayat dipilih oleh pesakit')}
         </div>
       )}
-      <div onClick={() => clampable && setOpen(o => !o)} className={cn('leading-[1.16] tracking-[-.015em] text-pretty', !open && 'max-md:line-clamp-2', long ? 'text-[28px] max-md:text-[20px]' : 'text-[34px] max-md:text-[24px]', empty ? 'font-semibold text-muted' : 'font-bold')}>{main}</div>
-      <div className={cn('mt-1 flex items-baseline gap-3 text-[19px] text-muted max-md:text-[16px]', open && 'flex-col gap-1')}>
+      <div onClick={() => clampable && setOpen(o => !o)} className={cn('leading-[1.16] tracking-[-.015em] text-pretty', !open && 'max-md:line-clamp-2', long ? 'text-[28px] max-md:text-[20px] short:text-[22px]' : 'text-[34px] max-md:text-[24px] short:text-[26px]', empty ? 'font-semibold text-muted' : 'font-bold')}>{main}</div>
+      <div className={cn('mt-1 flex items-baseline gap-3 text-[19px] text-muted max-md:text-[16px] short:text-[16px]', open && 'flex-col gap-1')}>
         <span className={cn('min-w-0 flex-1', !open && 'max-md:line-clamp-1')}>{sub}</span>
         {clampable && (
           <button onClick={() => setOpen(o => !o)} aria-expanded={open} className="inline-flex min-h-9 flex-none items-center gap-1 text-[14px] font-bold text-brand-ink md:hidden">
@@ -82,7 +82,7 @@ function Say() {
   )
 }
 
-const ghost = 'flex min-h-[54px] flex-col items-center justify-center gap-[3px] rounded-[12px] border border-line bg-surface p-1.5 text-[13px] font-bold text-ink-2 transition-[background-color,border-color] duration-200 hover:border-line-2 hover:bg-surface-2 max-md:min-h-[52px] max-md:min-w-[52px]'
+const ghost = 'flex min-h-[54px] flex-col items-center justify-center gap-[3px] rounded-[12px] border border-line bg-surface p-1.5 text-[13px] font-bold text-ink-2 transition-[background-color,border-color] duration-200 hover:border-line-2 hover:bg-surface-2 max-md:min-h-[52px] max-md:min-w-[52px] short:min-h-[48px]'
 const ghostLabel = 'max-md:sr-only'
 
 function Controls() {
@@ -92,9 +92,9 @@ function Controls() {
   const { speakMessage, replay, stopSpeech, clearItems, setClerk, showToast } = useBoard.getState()
   const show = () => (useBoard.getState().items.length ? setClerk(true) : showToast({ en: 'Nothing to show yet. Tap a card first.', bm: 'Belum ada mesej. Sentuh kad dahulu.' }, 'tap'))
   return (
-    <div className="grid w-[264px] content-start gap-2 max-md:w-auto max-md:grid-cols-[1fr_auto]">
-      <button onClick={speakMessage} className="flex min-h-[74px] items-center gap-3.5 max-md:min-h-[52px] max-md:gap-2.5 max-md:py-1 max-md:pl-1.5 max-md:text-[17px] rounded-[16px] border-0 bg-brand py-3 pr-[18px] pl-3 text-left text-[19px] font-extrabold text-on-brand shadow-[var(--sh)] transition-[scale,background-color] duration-200 ease-spring hover:bg-brand-ink active:scale-[.98]">
-        <span className="grid size-12 flex-none place-items-center rounded-[13px] bg-[rgba(255,255,255,.18)] max-md:size-10">
+    <div className="grid w-[264px] content-start gap-2 max-md:w-auto max-md:grid-cols-[1fr_auto] short:w-auto short:grid-cols-[auto_auto] short:items-center">
+      <button onClick={speakMessage} className="flex min-h-[74px] items-center gap-3.5 short:min-h-[52px] short:py-1 max-md:min-h-[52px] max-md:gap-2.5 max-md:py-1 max-md:pl-1.5 max-md:text-[17px] rounded-[16px] border-0 bg-brand py-3 pr-[18px] pl-3 text-left text-[19px] font-extrabold text-on-brand shadow-[var(--sh)] transition-[scale,background-color] duration-200 ease-spring hover:bg-brand-ink active:scale-[.98]">
+        <span className="grid size-12 flex-none place-items-center rounded-[13px] bg-[rgba(255,255,255,.18)] max-md:size-10 short:size-10">
           {speaking ? (
             <span className="flex h-[22px] items-center gap-[3px]">
               {['', '[animation-delay:.12s]', '[animation-delay:.24s]', '[animation-delay:.36s]'].map(d => <i key={d} className={cn('h-1.5 w-1 animate-bar rounded-[2px] bg-current', d)} />)}
@@ -151,19 +151,32 @@ export function AiStrip({ phone }: { phone?: boolean }) {
     </details>
   )
   return (
-    <div className="relative col-span-full flex animate-fade-up items-stretch gap-2.5 overflow-x-auto border-t border-dashed border-line-2 pt-2.5 [scrollbar-width:none] max-md:hidden">
-      <Badge n={3} />
-      <div className="flex flex-[0_0_170px] flex-col justify-center gap-1 text-[14px] leading-[1.25] font-bold text-brand-ink">
-        {t('Say it as one sentence', 'Sebut dalam satu ayat')}{guard}
+    <>
+      {/* Short screens: fold the options into one chip so the cards keep their room. */}
+      <details className="group relative col-span-full hidden animate-fade-up short:block">
+        <summary className="flex min-h-10 w-fit cursor-pointer list-none items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-3 pl-4 text-[14.5px] font-bold text-brand-ink [&::-webkit-details-marker]:hidden">
+          {t('Say it as one sentence', 'Sebut dalam satu ayat')}<span className="rounded-full bg-brand-soft px-2 py-0.5 text-[12.5px]">{cs.list.length}</span>
+          <Icon name="chev" className="size-4 transition-transform duration-200 group-open:rotate-180" />
+        </summary>
+        <div className="mt-2 grid gap-2">
+          {guard}
+          <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:none]">{list}</div>
+        </div>
+      </details>
+      <div className="relative col-span-full flex animate-fade-up items-stretch gap-2.5 overflow-x-auto border-t border-dashed border-line-2 pt-2.5 [scrollbar-width:none] max-md:hidden short:hidden">
+        <Badge n={3} />
+        <div className="flex flex-[0_0_170px] flex-col justify-center gap-1 text-[14px] leading-[1.25] font-bold text-brand-ink">
+          {t('Say it as one sentence', 'Sebut dalam satu ayat')}{guard}
+        </div>
+        {list}
       </div>
-      {list}
-    </div>
+    </>
   )
 }
 
 export function Composer() {
   return (
-    <section aria-live="polite" className="relative z-40 mx-5 mt-3 grid max-md:sticky max-md:top-2 max-md:gap-y-2 max-md:py-3 grid-cols-[1fr_auto] gap-x-[22px] gap-y-3 rounded-[20px] border border-line bg-surface px-[18px] py-3.5 shadow-[var(--sh)] max-md:grid-cols-1 max-sm:mx-3">
+    <section aria-live="polite" className="relative z-40 mx-5 mt-3 grid max-md:sticky max-md:top-2 max-md:gap-y-2 max-md:py-3 grid-cols-[1fr_auto] gap-x-[22px] gap-y-3 rounded-[20px] border border-line bg-surface px-[18px] py-3.5 short:gap-y-1.5 short:py-2 shadow-[var(--sh)] max-md:grid-cols-1 max-sm:mx-3">
       <Badge n={2} />
       <div className="grid min-w-0 content-start gap-2.5">
         <div className="flex min-h-[34px] flex-wrap items-center gap-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&>*]:flex-none"><Chips /></div>

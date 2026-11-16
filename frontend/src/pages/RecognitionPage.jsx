@@ -41,6 +41,7 @@ const TEXT = {
     staffType: 'Staff: speak or type', placeholder: 'Type here', sendBtn: 'Send',
     aiActive: 'BIM AI Active', bimMode: 'BIM Mode', soon: 'Not built yet', mic: 'Microphone voice input',
     micSoon: 'Voice input not built yet', speechLang: 'Speech language', camera: 'Camera',
+    camOff: 'Turn camera off', camOn: 'Turn camera on', cameraOff: 'Camera is off • you can still tap the shortcuts',
   },
   ms: {
     back: 'Kembali', module: 'Modul A • Pengguna pekak', ask: 'Tanya pesakit', queue: 'Panggil giliran', showSigns: 'Papar isyarat',
@@ -57,6 +58,7 @@ const TEXT = {
     staffType: 'Kakitangan: cakap atau taip', placeholder: 'Taip di sini', sendBtn: 'Hantar',
     aiActive: 'AI BIM Aktif', bimMode: 'Mod BIM', soon: 'Belum dibina', mic: 'Input suara mikrofon',
     micSoon: 'Input suara belum dibina', speechLang: 'Bahasa pertuturan', camera: 'Kamera',
+    camOff: 'Matikan kamera', camOn: 'Hidupkan kamera', cameraOff: 'Kamera dimatikan • anda masih boleh guna pintasan',
   },
 }
 
@@ -131,6 +133,7 @@ export default function RecognitionPage() {
   // Camera choice, remembered after refresh. '' = the browser's default camera.
   const { cameras, refresh: refreshCameras } = useCameras()
   const [cameraId, setCameraId] = useState(loadCamera)
+  const [cameraOn, setCameraOn] = useState(true) // on every time the page opens
   const [activeCameraId, setActiveCameraId] = useState('') // the camera really in use
   function chooseCamera(id) {
     setCameraId(id)
@@ -223,7 +226,7 @@ export default function RecognitionPage() {
     setTyped('')
   }
 
-  const handStatus = handCount > 0 ? t.signing(handCount) : words.length ? t.lowered : t.idle
+  const handStatus = !cameraOn ? t.cameraOff : handCount > 0 ? t.signing(handCount) : words.length ? t.lowered : t.idle
 
   // Main line follows the chosen language, the other language goes underneath.
   const main = (m) => (m ? (isMs ? m.bm : m.en) : '')
@@ -320,26 +323,41 @@ export default function RecognitionPage() {
               <span className="pointer-events-auto inline-flex items-center rounded-full border border-teal-400/40 bg-teal-900/90 px-3 py-1 text-xs font-semibold text-teal-200 shadow backdrop-blur-sm">
                 {handStatus}
               </span>
-              {cameras.length > 1 && (
-                <label className="pointer-events-auto flex items-center gap-1.5 text-xs font-semibold text-slate-200">
-                  <span>📷 {t.camera}</span>
-                  <select
-                    value={selectedCamera}
-                    onChange={(e) => chooseCamera(e.target.value)}
-                    className="max-w-56 truncate rounded-lg border border-slate-600 bg-slate-900/90 px-2 py-1 text-xs font-semibold text-slate-100 shadow backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
-                  >
-                    {cameras.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
+              <div className="pointer-events-auto flex flex-wrap items-center gap-2">
+                {cameras.length > 1 && (
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+                    <span>📷 {t.camera}</span>
+                    <select
+                      value={selectedCamera}
+                      onChange={(e) => chooseCamera(e.target.value)}
+                      className="max-w-56 truncate rounded-lg border border-slate-600 bg-slate-900/90 px-2 py-1 text-xs font-semibold text-slate-100 shadow backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                    >
+                      {cameras.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCameraOn((on) => !on)}
+                  aria-pressed={cameraOn}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shadow backdrop-blur-sm transition focus:outline-none focus:ring-2 focus:ring-teal-400 ${
+                    cameraOn
+                      ? 'border-slate-600 bg-slate-900/90 text-slate-100 hover:bg-slate-800'
+                      : 'border-teal-300 bg-teal-600 text-white hover:bg-teal-500'
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${cameraOn ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  {cameraOn ? t.camOff : t.camOn}
+                </button>
+              </div>
             </div>
             {/* HandCamera is used as it is. These classes only make it fill this dark box. */}
             <div className="[&>div]:max-w-none [&>div>div]:mx-auto [&>div>div]:w-[min(100%,calc(52dvh*1.3333))] [&_p]:pb-3 [&_p]:text-slate-300">
-              <HandCamera onLandmarks={onLandmarks} lang={isMs ? 'ms' : 'en'} deviceId={cameraId || undefined} onStream={onStream} />
+              <HandCamera onLandmarks={onLandmarks} lang={isMs ? 'ms' : 'en'} deviceId={cameraId || undefined} onStream={onStream} enabled={cameraOn} />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-slate-800 bg-slate-900/80 px-4 py-2 text-xs font-medium text-slate-300">
               <span>📹 {t.camera1}</span>

@@ -12,6 +12,7 @@ const TEXT = {
     loading: 'Loading hand detector...',
     camera: 'Starting camera...',
     show: 'Show your hand(s) to the camera',
+    off: 'Camera is off',
     one: 'One hand detected',
     both: 'Both hands detected',
     blocked: 'Camera permission was blocked. Allow camera access and refresh.',
@@ -24,6 +25,7 @@ const TEXT = {
     loading: 'Memuatkan pengesan tangan...',
     camera: 'Memulakan kamera...',
     show: 'Tunjukkan tangan anda ke kamera',
+    off: 'Kamera dimatikan',
     one: 'Satu tangan dikesan',
     both: 'Kedua-dua tangan dikesan',
     blocked: 'Kebenaran kamera disekat. Benarkan akses kamera dan muat semula.',
@@ -66,9 +68,10 @@ async function openStream(deviceId) {
  *
  * deviceId (optional): which camera to use. Changing it switches camera without reloading the detector.
  * onStream(deviceId) (optional): called when a camera has started, with the id that is really in use.
+ * enabled (optional, default true): false turns the camera off (the light goes off). The detector stays loaded.
  * lang (optional): "en" or "ms" for the messages.
  */
-export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStream }) {
+export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStream, enabled = true }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const landmarkerRef = useRef(null)
@@ -116,9 +119,11 @@ export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStrea
     }
   }, [])
 
-  // 2. Start the camera and the detection loop. Runs again when the camera choice changes.
+  // 2. Start the camera and the detection loop. Runs again when the camera choice or on/off changes.
   useEffect(() => {
-    if (!ready) return
+    if (!ready || !enabled) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
     let cancelled = false
     let stream
     let rafId
@@ -133,7 +138,6 @@ export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStrea
           stream.getTracks().forEach((t) => t.stop())
           return
         }
-        const video = videoRef.current
         video.srcObject = stream
         await video.play()
         setStatus('show')
@@ -147,10 +151,8 @@ export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStrea
     }
 
     function loop() {
-      const video = videoRef.current
-      const canvas = canvasRef.current
       const handLandmarker = landmarkerRef.current
-      if (cancelled || !video || !canvas || !handLandmarker) return
+      if (cancelled || !handLandmarker) return
 
       if (video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime
@@ -186,8 +188,10 @@ export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStrea
       cancelled = true
       cancelAnimationFrame(rafId)
       stream?.getTracks().forEach((track) => track.stop())
+      video.srcObject = null // drop the frozen last picture
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     }
-  }, [ready, deviceId])
+  }, [ready, deviceId, enabled])
 
   return (
     <div className="w-full max-w-xl">
@@ -203,9 +207,15 @@ export default function HandCamera({ onLandmarks, lang = 'en', deviceId, onStrea
           ref={canvasRef}
           className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
         />
+        {!enabled && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
+            <span className="text-4xl" aria-hidden="true">📷</span>
+            <span className="text-sm font-semibold">{t.off}</span>
+          </div>
+        )}
       </div>
-      <p className={`mt-3 text-center text-sm ${error ? 'text-red-600' : 'text-slate-600'}`}>
-        {error ? (error.detail ? t.failed(error.detail) : t[error.key]) : t[status]}
+      <p className={`mt-3 text-center text-sm ${error && enabled ? 'text-red-600' : 'text-slate-600'}`}>
+        {!enabled ? '\u00A0' : error ? (error.detail ? t.failed(error.detail) : t[error.key]) : t[status]}
       </p>
     </div>
   )
