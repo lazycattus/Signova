@@ -80,7 +80,39 @@ const EMERGENCY = {
   ambulance: ['Panggil ambulans!', 'Call an ambulance!'], stop: ['Berhenti.', 'Stop.'],
 }
 
+// "I need ..." the other way round (patient signs NO + a need, e.g. answering "Do you need medicine?")
+const NEED_NO = {
+  doctor: ['Saya tidak perlukan doktor.', 'I do not need the doctor.'],
+  nurse: ['Saya tidak perlukan jururawat.', 'I do not need the nurse.'],
+  medicine: ['Saya tidak perlukan ubat.', 'I do not need medicine.'],
+  water: ['Saya tidak perlukan air.', 'I do not need water.'],
+  toilet: ['Saya tidak perlu ke tandas.', 'I do not need the toilet.'],
+}
+
+// A sign alone still has to make a full sentence (supervisor rule: every communication is at least
+// one simple sentence). These are used only when nothing else in the message gives the sentence.
+const TIME_ALONE = {
+  today: ['Ia berlaku hari ini.', 'It is happening today.'],
+  last_night: ['Ia bermula sejak semalam.', 'It started last night.'],
+  morning: ['Ia bermula pagi tadi.', 'It started this morning.'],
+  night: ['Ia berlaku pada waktu malam.', 'It happens at night.'],
+}
+const INTENSITY_ALONE = {
+  very: ['Ia sangat teruk.', 'It is very bad.'],
+  a_little: ['Ia sedikit sahaja.', 'It is only a little.'],
+}
+const QUESTION_ALONE = {
+  what: ['Apa maksudnya?', 'What do you mean?'],
+  when: ['Bila ia akan berlaku?', 'When will it happen?'],
+}
+const REPLY_ALONE = {
+  yes: ['Ya, betul.', 'Yes, that is right.'],
+  no: ['Tidak, bukan begitu.', 'No, that is not right.'],
+}
+
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+// "Saya demam." -> "saya demam." so it can follow "Ya, " ("I ..." keeps its capital)
+const lowerFirst = (s) => (/^I[ '’]/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1))
 
 // ids: the signed word ids in any order. Returns { bm, en } or null if nothing signed.
 export function buildSentence(ids) {
@@ -96,14 +128,20 @@ export function buildSentence(ids) {
     }
   }
 
-  const negated = ids.includes('no') && of('symptom').length > 0
+  const symptoms = of('symptom')
+  const needs = of('need')
+  const question = of('question')[0]
   const body = of('body')[0]
-  const time = TIME[of('time')[0]?.id]
+  const timeSign = of('time')[0]
+  const time = TIME[timeSign?.id]
   const intensity = of('intensity')[0]
+  const saidYes = ids.includes('yes')
+  const saidNo = ids.includes('no')
+  const negated = saidNo && symptoms.length > 0
   const bm = []
   const en = []
 
-  for (const sym of of('symptom')) {
+  for (const sym of symptoms) {
     const t = SYMPTOM[sym.id]
     let b = negated ? t.nbm : t.bm
     let e = negated ? t.nen : t.en
@@ -117,19 +155,25 @@ export function buildSentence(ids) {
     en.push(`I ${e}.`)
   }
 
-  // body part alone (no symptom): just point at it
-  if (!of('symptom').length && body) {
-    bm.push(`Di bahagian ${body.bm}.`)
-    en.push(`In my ${body.en}.`)
+  // body part alone (no symptom): "It hurts in my head."
+  if (!symptoms.length && body) {
+    let b = `Sakit di bahagian ${body.bm}`
+    let e = `It hurts in my ${body.en}`
+    if (time) { b += ` ${time[0]}`; e += ` ${time[1]}` }
+    if (intensity) { b += ` ${intensity.bm}`; e += intensity.id === 'very' ? ' very much' : ' a little' }
+    bm.push(`${b}.`)
+    en.push(`${e}.`)
   }
 
-  const needs = of('need')
-  const question = of('question')[0]
+  const negNeeds = saidNo && !question // "no" + a need = "I do not need ..."
   for (const n of needs) {
     const [nb, ne] = NEED[n.id]
     if (question) {
       bm.push(`${cap(nb)} ${question.bm}?`)
       en.push(question.id === 'when' ? `When is ${ne} coming?` : `What about ${ne}?`)
+    } else if (negNeeds) {
+      bm.push(NEED_NO[n.id][0])
+      en.push(NEED_NO[n.id][1])
     } else if (n.id === 'toilet') {
       bm.push('Saya perlu ke tandas.')
       en.push('I need the toilet.')
@@ -138,13 +182,39 @@ export function buildSentence(ids) {
       en.push(`I need ${ne}.`)
     }
   }
-  if (question && !needs.length) {
+  if (question && !needs.length && !bm.length) {
+    bm.push(QUESTION_ALONE[question.id][0])
+    en.push(QUESTION_ALONE[question.id][1])
+  } else if (question && !needs.length) {
     bm.push(`${cap(question.bm)}?`)
     en.push(`${cap(question.en)}?`)
   }
 
+  // time / intensity with nothing to attach to: still say a full sentence
+  if (!symptoms.length && !body) {
+    if (timeSign && !bm.length) { bm.push(TIME_ALONE[timeSign.id][0]); en.push(TIME_ALONE[timeSign.id][1]) }
+    if (intensity) {
+      if (!timeSign || bm.length) { bm.push(INTENSITY_ALONE[intensity.id][0]); en.push(INTENSITY_ALONE[intensity.id][1]) }
+    }
+  }
+
+  // yes / no: an answer in front of the sentence ("Yes, I have a fever."), a full sentence if alone
+  const answer = saidYes ? 'yes' : saidNo && !negated && !(negNeeds && needs.length) ? 'no' : null
+  if (answer) {
+    if (bm.length) {
+      bm[0] = `${answer === 'yes' ? 'Ya' : 'Tidak'}, ${lowerFirst(bm[0])}`
+      en[0] = `${answer === 'yes' ? 'Yes' : 'No'}, ${lowerFirst(en[0])}`
+    } else {
+      bm.push(REPLY_ALONE[answer][0])
+      en.push(REPLY_ALONE[answer][1])
+    }
+  } else if (saidNo && !bm.length) {
+    bm.push(REPLY_ALONE.no[0]) // "no" alone after the rules above
+    en.push(REPLY_ALONE.no[1])
+  }
+
   for (const r of of('reply')) {
-    if (r.id === 'no' && negated) continue
+    if (r.id === 'yes' || r.id === 'no') continue // handled above
     bm.push(REPLY[r.id][0])
     en.push(REPLY[r.id][1])
   }
