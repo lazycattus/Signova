@@ -2,6 +2,20 @@
 
 Short record of project decisions, newest first. Add a line when you and your partner decide something.
 
+## 16 Nov 2026: Recognise signs from movement, head and face, running in the browser
+
+- **Decision:** the model reads a 2-second window of frames, not one still picture. Per frame it gets both hands,
+  where the hands are compared to the face, head turn / nod / tilt, and face expression (mouth, brows, eyes, cheeks).
+  The word being signed is shown on the camera picture.
+- **Why:** some signs look the same in one picture and differ by movement or by head and face (as taught in sign
+  language class). The supervisor also asked to see the signed word on the camera.
+- **Where it runs:** in the browser with TensorFlow.js (no network delay per sign). Training is in Python (`ml/train.py`).
+  This differs from the proposal, which says a Flask classifier API. Flask is still possible for training or later use.
+- **Training data:** videos (dictionary videos and our own recordings), turned into numbers by `ml/extract_sequences.py`.
+  Only numbers are stored, no video or faces are kept in the repo.
+- **Not decided:** how many recordings and people are needed for a good accuracy. Check the TEST accuracy that
+  `train.py` prints and record more clips for the signs that get mixed up.
+
 ## 16 Nov 2026: Help desk and patient only, no bed or ward wording
 
 - **Decision:** for now the system is a conversation between the help desk (nurse) and the patient. It is not a
