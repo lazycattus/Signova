@@ -68,3 +68,62 @@ This matches `frontend/src/lib/landmarks.js`, so don't change one without the ot
 ## 3. Training (next)
 
 Combine all `data/*.csv`, train in Google Colab, export the model.
+
+
+## 2. Train the model that reads movement, head and face (this is the one the website uses)
+
+The first scripts above save ONE still picture per row. A still picture cannot tell apart signs that look the
+same and differ by movement, head nod/shake, eyebrows or mouth. So this newer path keeps a short video window
+(2 seconds) with, per frame, 145 numbers: both hands (126), where the hands are compared to the face (8),
+head turn / nod / tilt (3) and face expression (8). The maths is in `features.py`.
+
+### Step 1: videos in folders (same layout as 1b)
+
+```
+ml/videos/pain/clip1.mp4
+ml/videos/thank_you/take1.mov
+```
+
+- Dictionary videos (e.g. BIM SignBank): check the site's terms before using them, and keep the videos
+  out of Git (only the numbers are used and saved).
+- Your own recordings are better for the final model: a few different people, different light and distance,
+  facing the camera so the face and both hands are visible. Film with the normal camera, not a mirror mode.
+- Aim for at least 5 clips per sign. With only 1-2 clips the model still trains, but there is no honest test
+  for that sign and the live result will be weak.
+
+### Step 2: videos to numbers
+
+```bash
+pip install -r requirements.txt
+python extract_sequences.py --participant SB     # SB = dictionary videos, P01 = your own, and so on
+```
+
+Saves `data/sequences_SB.npz`. Use a different `--participant` per person or source, so the test can use
+clips from someone the model did not learn from. Use `--show` to watch the tracking.
+
+### Step 3: train and send the model to the website
+
+```bash
+python train.py
+```
+
+It prints the TEST accuracy on clips it never trained on, and the signs it mixes up most
+("pain -> fever x2"). Record more clips for those. It writes the model into
+`../frontend/public/models/signova/` (about 0.5 MB). Commit that folder so the website can load it.
+
+### Step 4: try it
+
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+
+Open the Recognition page and sign. The word appears on the camera picture (grey = guessing, green with a
+tick = accepted and added to the signed words). Lower your hands for half a second between signs.
+No model files yet? The camera still works and says "Sign model not trained yet".
+
+### If you change the numbers per frame
+
+`features.py` (Python) and `frontend/src/lib/features.js` must stay identical. After a change, run
+`python make_fixture.py` then `cd ../frontend && npm run test:features`.
