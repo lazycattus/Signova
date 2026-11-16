@@ -13,6 +13,11 @@ Short record of project decisions, newest first. Add a line when you and your pa
   This differs from the proposal, which says a Flask classifier API. Flask is still possible for training or later use.
 - **Training data:** videos (dictionary videos and our own recordings), turned into numbers by `ml/extract_sequences.py`.
   Only numbers are stored, no video or faces are kept in the repo.
+- **Headshake = no (built, switched OFF):** BIM has its own sign for NO (one of the 37), so patients say "no pain"
+  by signing NO + PAIN, and the sentence builder already makes "I am not in pain". An optional rule that adds "no"
+  after a headshake exists (`HEADSHAKE_MEANS_NO` in `recognizer.js`) but stays off until a BIM teacher or Deaf signer
+  confirms a headshake is used like that. A wrong "no" would be a risky mistake. The head and face numbers are still
+  used by the model to tell signs apart.
 - **Not decided:** how many recordings and people are needed for a good accuracy. Check the TEST accuracy that
   `train.py` prints and record more clips for the signs that get mixed up.
 
