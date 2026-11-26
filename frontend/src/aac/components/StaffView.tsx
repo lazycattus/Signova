@@ -36,7 +36,10 @@ export function StaffView() {
     <section className="fixed inset-x-0 top-0 bottom-(--foot) z-55 flex animate-fade flex-col bg-bg">
       <div className={cn(sheetHead, 'items-center bg-surface')}>
         <span className={cn(sheetIcon, 'text-brand-ink')}><Icon name="clip" className="size-8" /></span>
-        <SheetTitle title={P.staffTitle} sub={P.staffPrefix + 'Signed in as staff SN-104 (simulated) · no patient name stored'} />
+        <SheetTitle
+  title={P.staffTitle}
+  sub={P.staffPrefix + 'Current visit communication'}
+/>
         <button className={cn(tbtnPlain, 'ml-auto')} onClick={copy}><Icon name="copy" className="size-[18px]" />Copy summary</button>
         <CloseButton label="Close staff view" className="ml-0" onClick={() => setStaffOpen(false)} />
       </div>
