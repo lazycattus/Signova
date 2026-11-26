@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { NurseGate } from './components/NurseGate.tsx'
 import { useBoard } from './store.ts'
 import { cancelSpeech } from './lib/speech.ts'
 import { preloadBody } from './lib/preload.ts'
@@ -59,7 +60,11 @@ export function App() {
       {clerk && <ClerkView />}
       {guide && <GuideDrawer />}
       <IdleGuard />
-      {staffOpen && <StaffView />}
+      {staffOpen && (
+  <NurseGate>
+    <StaffView />
+  </NurseGate>
+)}
       {bigImage && <BigDrawing src={bigImage} />}
       {alarm && <Alarm />}
       {notes && <NotesDrawer />}
