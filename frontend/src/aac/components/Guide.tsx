@@ -9,7 +9,7 @@ const GUIDE: [title: string, steps: string[]][] = [
     "Start or end a visit",
     [
       "Tap cards or use guided steps for Register, Appointment, Directions and Pharmacy.",
-      "Staff menu → Start new visit clears the message and visit log. Undo is offered.",
+      "Register opens the patient form. A nurse confirms the identity and visit on this device. Finish patient session clears the screen without deleting saved records.",
       "After 10 minutes of inactivity, the board asks whether to keep this visit before clearing it."
     ]
   ],
@@ -49,15 +49,15 @@ const GUIDE: [title: string, steps: string[]][] = [
     "Demo features",
     [
       "Ask by voice cycles through sample questions; it does not record the microphone.",
-      "AI wording and summaries use local rules; no AI service is connected.",
+      "AI wording uses local rules. Review my summary shows only patient-selected answers; no AI service is connected.",
       "Speech output depends on installed English and Malay voices. If unavailable, use Show."
     ]
   ],
   [
     "Saving",
     [
-      "The board saves visits in this browser on this device.",
-      "If saving is blocked or the device is full, the board still works, but refreshing may lose the message."
+      "Unregistered answers and registration drafts stay in memory and disappear on reload.",
+      "After nurse confirmation, the patient can review and confirm a summary for the current visit. It is saved in the database only after confirmation."
     ]
   ]
 ]

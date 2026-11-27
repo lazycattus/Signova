@@ -45,7 +45,7 @@ def staff_required(view):
         user = db.session.get(StaffUser, user_id)
 
         if not user or not user.is_active:
-            session.clear()
+            session.pop("staff_user_id", None)
             return jsonify(error="Please sign in."), 401
 
         if user.role not in ("admin", "staff"):
@@ -102,7 +102,10 @@ def login():
         session.pop("staff_user_id", None)
         return jsonify(error="Invalid username or password."), 401
 
+    current_registration = session.get("current_registration")
     session.clear()
+    if current_registration:
+        session["current_registration"] = current_registration
     session["staff_user_id"] = user.id
     session.permanent = True
 
@@ -123,7 +126,7 @@ def current_account():
     user = db.session.get(StaffUser, user_id)
 
     if not user or not user.is_active:
-        session.clear()
+        session.pop("staff_user_id", None)
         return jsonify(error="Please sign in."), 401
 
     return jsonify(user=account_details(user))
@@ -131,7 +134,10 @@ def current_account():
 
 @auth_bp.post("/logout")
 def logout():
+    current_registration = session.get("current_registration")
     session.clear()
+    if current_registration:
+        session["current_registration"] = current_registration
     return jsonify(message="Signed out.")
 
 

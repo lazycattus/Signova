@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 export const title = 'Nurse login'
 export const order = 40
@@ -93,6 +94,11 @@ export default function NurseLoginPage() {
     try {
       await submitAuth('logout')
       setAccount(null)
+      if (typeof BroadcastChannel !== 'undefined') {
+        const channel = new BroadcastChannel('signova-nurse-session')
+        channel.postMessage('logout')
+        channel.close()
+      }
       setUsername('')
       setPassword('')
     } catch (err) {
@@ -145,6 +151,8 @@ export default function NurseLoginPage() {
               </dd>
             </div>
           </dl>
+
+          <Link to="/nurse-dashboard" className="block rounded-lg bg-teal-700 px-5 py-3 text-center font-semibold text-white">Open patient dashboard</Link>
 
           <button
             type="button"

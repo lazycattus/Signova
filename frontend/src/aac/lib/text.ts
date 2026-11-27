@@ -15,7 +15,7 @@ export const combined = (items: Item[], lang: Lang) => items.map(i => i.say[lang
 
 /* ---------- Pain ---------- */
 /** `structure` is the anatomy name tapped on the 3D body (staff record only, never spoken). */
-export type PainSite = { part: PartKey; sub: SubKey | null; side: Side | null; score: number; type: PainType | null; structure: string | null }
+export type PainSite = { part: PartKey; sub: SubKey | null; side: Side | null; score: number; type: PainType | null; structure: string | null; onset?: string | null }
 export type PainDraft = Omit<PainSite, 'part' | 'score'> & { part: PartKey | null; score: number | null; sites: PainSite[] }
 
 const sideWord = (side: Side | null, lang: Lang) => (!side ? '' : lang === 'en' ? (side === 'l' ? 'left ' : 'right ') : side === 'l' ? ' kiri' : ' kanan')
@@ -44,14 +44,18 @@ export function currentSite(d: PainDraft): { ok: true; site: PainSite } | { ok: 
   if (!d.part) return { ok: false, missing: d.sites.length ? B('Add another spot, or save.', 'Tambah tempat lain, atau simpan.') : B('Choose where it hurts.', 'Pilih tempat yang sakit.') }
   if (PART[d.part].side === 'need' && !d.side) return { ok: false, missing: B('Choose left or right.', 'Pilih kiri atau kanan.') }
   if (d.score === null) return { ok: false, missing: B('Choose a number from 0 to 10.', 'Pilih nombor 0 hingga 10.') }
-  return { ok: true, site: { part: d.part, sub: d.sub, side: d.side, score: d.score, type: d.type, structure: d.structure } }
+  return { ok: true, site: { part: d.part, sub: d.sub, side: d.side, score: d.score, type: d.type, structure: d.structure, ...(d.onset?.trim() && { onset: d.onset.trim() }) } }
 }
 export const painItem = (site: PainSite) => ({
   kind: 'pain' as const,
+  reportedPain: { ...site },
   say: painSay(site),
   short: painShort(site),
   meta: {
     score: site.score,
+    side: site.side === 'l' ? 'Left' : site.side === 'r' ? 'Right' : null,
+    type: site.type ? painType(site.type).en : null,
+    onset: site.onset?.trim() || null,
     site: painShort(site).en.replace(/ pain.*/, ''),
     ...(site.structure && { detail: 'Tapped on 3D body: ' + structureLabel(site.structure) }),
   },
