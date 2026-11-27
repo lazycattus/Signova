@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react'
+import { useVisit } from '../visitStore.ts'
 import { useBoard } from '../store.ts'
 import { cn } from '../lib/text.ts'
 import { PROFILES } from '../lib/vocab.ts'
@@ -75,7 +76,7 @@ function StaffMenu() {
   const menu = useRef<HTMLDivElement>(null)
   const profile = useBoard(s => s.profile)
   const notes = useBoard(s => s.notes)
-  const { setStaffOpen, setNotes, staffAsk, newVisit, setGuide } = useBoard.getState()
+  const { setNotes, staffAsk, newVisit, setGuide } = useBoard.getState()
   const pick = (fn: () => void) => () => { menu.current?.hidePopover(); fn() }
   return (
     <div ref={menu} id="staffMenu" popover="auto" role="menu" aria-label="Staff tools"
@@ -83,11 +84,10 @@ function StaffMenu() {
       <div className="grid gap-0.5 border-b border-line pb-1 md:hidden">
         <MenuItem icon="mic" title="Ask by voice" sub="Speak a question; the patient answers on the board" onClick={pick(staffAsk)} />
       </div>
-      <MenuItem icon="clip" title={PROFILES[profile].staffBtn} sub="Messages, replies, AI summary, pain reports" onClick={pick(() => setStaffOpen(true))} />
       <MenuItem icon="q" title="Staff guide" sub="How to use Signova with a patient" onClick={pick(() => setGuide(true))} />
       <MenuItem icon="info" title="Layout notes" sub="Numbered notes on each zone" pressed={notes} onClick={pick(() => setNotes(!notes))} />
       <div className="mt-0.5 border-t border-line pt-1">
-        <MenuItem icon="trash" title="Start new visit" sub={`Clears the message and log for ${PROFILES[profile].where}`} onClick={pick(newVisit)} />
+        <MenuItem icon="trash" title="Start new visit" sub={`Clears the message and log for ${PROFILES[profile].where}`} onClick={pick(() => useVisit.getState().current ? useVisit.getState().set({ registrationOpen: true }) : newVisit())} />
       </div>
     </div>
   )

@@ -2,6 +2,16 @@
 
 Short record of project decisions, newest first. Add a line when you and your partner decide something.
 
+## 27 Nov 2026: Registration and patient-confirmed summaries
+
+- **Scope approved by the project owner:** use one front-desk device for registration, nurse identity verification, and patient review. This updates the earlier no-patient-storage scope below for these specific records.
+- **Saved:** nurse-confirmed patient/visit records and versioned snapshots explicitly confirmed by the patient, linked to that visit in PostgreSQL.
+- **Temporary:** registration drafts and AAC/pain messages remain in browser memory until confirmation. Reloading clears drafts. No clinical drafts are written to localStorage; legacy AAC storage is removed.
+- **Review:** show the patient's original messages, with missing answers displayed as “Not answered”. Corrections require another confirmation. Generated wording and staff messages are excluded.
+- **Access:** patient lookup and visit registration require nurse/admin sign-in. IC entry alone does not reveal a record. The nurse verifies which patient owns temporary pain reports before linking them.
+- **Handoff:** nurse sign-out preserves only the current patient's device binding. Ending the device session revokes that binding and clears the screen; it does not delete the visit or mark consultation complete.
+- **Later work:** downloadable doctor handoff forms and daily reports are not implemented by this update. Retention/deployment decisions remain separate work.
+
 ## 16 Nov 2026: Help desk and patient only, no bed or ward wording
 
 - **Decision:** for now the system is a conversation between the help desk (nurse) and the patient. It is not a

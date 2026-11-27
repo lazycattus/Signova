@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { useBoard } from '../store.ts'
+import { useVisit } from '../visitStore.ts'
 import { alt, cn, currentSite, painItem, painSay, painShort, type PainDraft } from '../lib/text.ts'
 import { FLOWS, flowResult, visibleSteps, type Draft, type FlowOpt } from '../lib/flows.ts'
 import { PART, PARTS, SUBS, TYPES, painType, type FlowKey } from '../lib/vocab.ts'
@@ -18,7 +19,11 @@ export function PainModal() {
   const lang = useBoard(s => s.lang)
   const t = useT()
   const { setModal, addItem, showToast } = useBoard.getState()
-  const [d, setD] = useState(EMPTY_PAIN)
+  const editUid = useVisit(s => s.editPainUid)
+  const [d, setD] = useState(() => {
+    const old = useBoard.getState().items.find(i => i.uid === editUid)?.reportedPain
+    return old ? { ...old, sites: [] } : EMPTY_PAIN
+  })
 
   const update = (patch: Partial<PainDraft>) => setD(x => ({ ...x, ...patch }))
   // A tap on the 3D body fills part, area and side at once; the buttons fill one level at a time.
@@ -28,7 +33,10 @@ export function PainModal() {
   const recorded = new Set(d.sites.map(s => s.part))
   const recordedSub = new Set(d.sites.filter(s => s.part === d.part).map(s => s.sub))
   const cur = currentSite(d)
-  const close = () => setModal(null)
+  const close = () => {
+    setModal(null)
+    if (editUid !== null) useVisit.getState().set({ editPainUid: null, summaryOpen: true })
+  }
 
   const addSite = () => { if (cur.ok) update({ ...EMPTY_PAIN, sites: [...d.sites, cur.site] }) }
   // Save only works once there is something complete to save; the preview says what is missing.
@@ -36,7 +44,8 @@ export function PainModal() {
   const save = () => {
     if (!canSave) return
     const sites = cur.ok ? [...d.sites, cur.site] : d.sites
-    sites.forEach(site => addItem(painItem(site), 'Body map'))
+    if (editUid !== null) useBoard.getState().replaceItem(editUid, painItem(sites[0]))
+    else sites.forEach(site => addItem(painItem(site), 'Body map'))
     close()
     showToast({ en: 'Pain report added to your message.', bm: 'Laporan sakit ditambah ke mesej anda.' })
   }
@@ -120,6 +129,13 @@ export function PainModal() {
             </div>
           </Step>
 
+          <div className="space-y-2">
+            <label htmlFor="pain-onset" className="block font-bold">{t('When did it start? (optional)', 'Bila bermula? (pilihan)')}</label>
+            <input id="pain-onset" value={d.onset ?? ''} maxLength={200}
+              onChange={e => update({ onset: e.target.value })}
+              className="min-h-12 w-full rounded-[12px] border border-line-2 bg-surface p-3"
+              placeholder={t('Leave blank if not answered', 'Biarkan kosong jika belum dijawab')} />
+          </div>
           <div className="grid gap-1.5">
             {d.sites.length > 0 && <b className="text-[14px]">{t('Spots added', 'Tempat ditambah')}</b>}
             {d.sites.map((s, i) => (
@@ -136,7 +152,7 @@ export function PainModal() {
         <div className={preview}>
           {cur.ok ? <>{painSay(cur.site)[lang]}<small className={previewSub}>{painSay(cur.site)[alt(lang)]}</small></> : <Todo>{cur.missing[lang]}</Todo>}
         </div>
-        <button className={cn(btnAlt, footCompact)} disabled={!cur.ok} onClick={addSite}><Icon name="plus" className="size-[19px]" /><span className="max-sm:sr-only">{t('Add another spot', 'Tambah tempat lain')}</span></button>
+        <button className={cn(btnAlt, footCompact)} disabled={!cur.ok || editUid !== null} onClick={addSite}><Icon name="plus" className="size-[19px]" /><span className="max-sm:sr-only">{t('Add another spot', 'Tambah tempat lain')}</span></button>
         <CancelButton onClick={close} />
         <SaveButton onClick={save} disabled={!canSave} />
       </div>

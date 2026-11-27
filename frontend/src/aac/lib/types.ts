@@ -1,3 +1,4 @@
+import type { PainSite } from './text.ts'
 export type Lang = 'en' | 'bm'
 export type Bi = { en: string; bm: string }
 export type Profile = 'fd'
@@ -28,7 +29,8 @@ export type Item = {
   say: Bi
   short: Bi
   src: string
-  meta?: { score: number; site: string; detail?: string }
+  reportedPain?: PainSite
+  meta?: { score: number; site: string; detail?: string; side?: string | null; type?: string | null; onset?: string | null }
   /** Number of the staff-log row this chip created, so the chip can show when staff saw it. */
   ev?: number
 }

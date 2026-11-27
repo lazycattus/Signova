@@ -117,3 +117,31 @@ class StaffUser(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+
+class RegistrationConfirmation(db.Model):
+    """Only created after an authenticated nurse verifies identity on this device."""
+    __tablename__ = 'registration_confirmations'
+
+    id = db.Column(db.String(36), primary_key=True)
+    payload_digest = db.Column(db.String(64), nullable=False)
+    visit_id = db.Column(db.String(36), db.ForeignKey('visits.id', ondelete='RESTRICT'), nullable=False, index=True)
+    confirmed_by = db.Column(db.String(36), db.ForeignKey('staff_users.id', ondelete='RESTRICT'), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
+    ended_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+
+class VisitSummary(db.Model):
+    """A versioned snapshot of answers explicitly confirmed by the patient."""
+    __tablename__ = 'visit_summaries'
+
+    id = db.Column(db.String(36), primary_key=True, default=new_id)
+    request_id = db.Column(db.String(36), nullable=False)
+    visit_id = db.Column(db.String(36), db.ForeignKey('visits.id', ondelete='RESTRICT'), nullable=False, index=True)
+    version = db.Column(db.Integer, nullable=False)
+    answers = db.Column(db.JSON, nullable=False)
+    confirmed_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
+    __table_args__ = (
+        db.UniqueConstraint('request_id', name='uq_summary_request_id'),
+        db.UniqueConstraint('visit_id', 'version', name='uq_visit_summary_version'),
+        db.CheckConstraint('version > 0', name='ck_summary_positive_version'),
+    )

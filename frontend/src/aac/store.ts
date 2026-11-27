@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { useVisit } from './visitStore.ts'
+import { visitApi } from './lib/visitApi.ts'
 import { cancelSpeech, speakText } from './lib/speech.ts'
-import { combined, isOpenable, now, painItem } from './lib/text.ts'
+import { combined, isOpenable, now } from './lib/text.ts'
 import type { Bi, IconName, Item, Kind, Lang, LogEvent, NewItem, Profile, Reply, TabKey } from './lib/types.ts'
-import { C, STAFF_Q, catOf, card, type CardKey, type FlowKey, type StaffQuestion } from './lib/vocab.ts'
+import { STAFF_Q, catOf, card, type CardKey, type FlowKey, type StaffQuestion } from './lib/vocab.ts'
 
 /** `msg` as Bi when the patient reads it; a plain string for staff-only notices. */
 type Toast = { id: number; msg: string | Bi; icon: IconName; action?: { label: Bi; run: () => void } }
@@ -47,6 +48,7 @@ type BoardActions = {
   logEvent: (kind: Kind, say: Bi, src: string, extra?: Partial<LogEvent>, profile?: Profile) => number
   addItem: (item: NewItem, src: string, silent?: boolean) => void
   addCard: (key: CardKey, src?: string) => void
+  replaceItem: (uid: number, item: NewItem) => void
   removeItem: (uid: number) => void
   clearItems: () => void
   speakMessage: () => void
@@ -85,45 +87,23 @@ const cardItem = (key: CardKey): NewItem => {
 }
 
 
-// Start in a realistic working state: a front-desk visit with two items already chosen.
-const demoPain = painItem({ part: 'leg', sub: null, side: 'l', score: 6, type: 'sharp', structure: null })
-const DEMO_ITEMS: Item[] = [
-  { ...cardItem('register'), uid: uid++, src: 'Card', ev: 1 },
-  { ...demoPain, uid: uid++, src: 'Body map', ev: 2 },
-]
-const DEMO_EVENTS: LogEvent[] = [
-  { n: 1, t: now(), kind: 'request', ...C.register.say, src: 'Card', seen: false },
-  { n: 2, t: now(), kind: 'pain', ...demoPain.say, src: 'Body map', seen: false, ...demoPain.meta },
-]
-
-const STORE_KEY = 'signova-aac-front-desk'
-
-/** localStorage that tells staff once when the device stops saving (full or blocked) instead of failing silently. */
-let warnedSave = false
-const safeStorage = {
-  getItem: (k: string) => { try { return localStorage.getItem(k) } catch { return null } },
-  removeItem: (k: string) => { try { localStorage.removeItem(k) } catch { /* nothing to remove */ } },
-  setItem: (k: string, v: string) => {
-    try { localStorage.setItem(k, v) } catch {
-      if (warnedSave) return
-      warnedSave = true
-      setTimeout(() => useBoard.getState().showToast('This device could not save the board. It still works, but a refresh will lose the message. Start a new visit to free space.', 'alert'))
-    }
-  },
+// Drafts belong to the current screen only. Never restore prior clinical drafts.
+if (typeof window !== 'undefined') {
+  try { window.localStorage.removeItem('signova-aac-front-desk') } catch { /* storage may be disabled */ }
 }
 
-export const useBoard = create<BoardState & BoardActions>()(persist((set, get) => ({
+export const useBoard = create<BoardState & BoardActions>((set, get) => ({
   profile: 'fd',
   lang: 'en',
   tab: 'main',
-  items: DEMO_ITEMS,
+  items: [],
   aiChoice: null,
   lastSpoken: null,
   speaking: false,
   listening: false,
   staffQIdx: { fd: 0 },
   activeQ: null,
-  events: { fd: DEMO_EVENTS },
+  events: { fd: [] },
   notes: false,
   modal: null,
   staffOpen: false,
@@ -181,11 +161,22 @@ export const useBoard = create<BoardState & BoardActions>()(persist((set, get) =
   },
 
   addCard: (key, src = 'Card') => {
+    if (key === 'register') return useVisit.getState().set({ registrationOpen: true })
     const c = card(key)
     if ('action' in c) return set({ modal: c.action })
     if (c.flow) return set({ modal: c.flow })
     get().addItem(cardItem(key), src)
   },
+
+  replaceItem: (id, item) => set(s => {
+    const old = s.items.find(i => i.uid === id)
+    if (!old) return {}
+    return {
+      items: s.items.map(i => i.uid === id ? { ...item, uid: id, src: 'Patient correction', ev: i.ev } : i),
+      events: { ...s.events, fd: s.events.fd.map(e => e.n === old.ev ? { ...e, ...item.say, kind: item.kind, score: item.meta?.score, site: item.meta?.site, detail: item.meta?.detail } : e) },
+      aiChoice: null,
+    }
+  }),
 
   removeItem: id => set(s => ({ items: s.items.filter(i => i.uid !== id), aiChoice: null })),
 
@@ -265,12 +256,13 @@ export const useBoard = create<BoardState & BoardActions>()(persist((set, get) =
   setClerk: clerk => set({ clerk }),
 
   newVisit: () => {
-    const { profile, items, aiChoice, events, reply } = get()
-    const keep = { items, aiChoice, events, reply }
-    set({ items: [], aiChoice: null, activeQ: null, events: { ...events, [profile]: [] }, reply: reply?.profile === profile ? null : reply, staffOpen: false })
-    get().showToast('New visit started. Message and log cleared.', 'trash', { label: UNDO, run: () => set(keep) })
+    cancelSpeech()
+    speakId++
+    set({ items: [], aiChoice: null, lastSpoken: null, speaking: false, activeQ: null,
+      events: { fd: [] }, reply: null, staffOpen: false, modal: null, clerk: false, bigImage: null, alarm: null, toast: null })
+    useVisit.getState().reset()
+    void visitApi('/visits/current/lock', {}).catch(() => get().showToast('Screen cleared. Reconnect before the next registration.', 'info'))
   },
-
 
   startAlarm: () => {
     cancelSpeech()
@@ -289,15 +281,4 @@ export const useBoard = create<BoardState & BoardActions>()(persist((set, get) =
   },
 
   setBigImage: bigImage => set({ bigImage }),
-}), {
-  name: STORE_KEY,
-  version: 1,
-  storage: createJSONStorage(() => safeStorage),
-  // Only what a refresh should keep; open windows, toasts and speech state start fresh.
-  partialize: s => ({ profile: s.profile, lang: s.lang, tab: s.tab, items: s.items, aiChoice: s.aiChoice, lastSpoken: s.lastSpoken, staffQIdx: s.staffQIdx, events: s.events, alarm: s.alarm, reply: s.reply }),
 }))
-
-// Synchronize AAC visits across tabs on the same device.
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', e => { if (e.key === STORE_KEY) void useBoard.persist.rehydrate() })
-}
